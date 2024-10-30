@@ -1,7 +1,7 @@
 ﻿using System.Buffers;
 using System.IO.Pipelines;
 
-namespace Demo.Console;
+namespace Demo.Console.Processors;
 
 public class CsvPipelineProcessor : ICsvProcessor
 {
@@ -21,13 +21,13 @@ public class CsvPipelineProcessor : ICsvProcessor
     private static async Task FillPipeAsync(Stream inputStream, PipeWriter writer)
     {
         const int bufferSize = 1024;
-        
-        while(true)
+
+        while (true)
         {
             Memory<byte> memory = writer.GetMemory(bufferSize);
-            
+
             int bytesRead = await inputStream.ReadAsync(memory);
-            
+
             if (bytesRead == 0) break;
 
             writer.Advance(bytesRead);

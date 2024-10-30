@@ -1,4 +1,4 @@
-﻿namespace Demo.Console;
+﻿namespace Demo.Console.Processors;
 
 public interface ICsvProcessor
 {
