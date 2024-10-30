@@ -17,3 +17,5 @@ SELECT
     CURRENT_DATE - (RANDOM() * 365)::INT
 FROM
     generate_series(1, 10000000);
+
+CREATE INDEX idx_company_sales_date ON sales (company_id, sales_date);
