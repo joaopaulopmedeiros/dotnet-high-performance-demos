@@ -59,7 +59,7 @@ public class SalesPipeReportGenerator(string connectionString) : ISalesReportGen
 
             while (await reader.ReadAsync())
             {
-                string reportRow = $"{reader["CompanyId"]},{reader["Description"]},{reader.GetDecimal("GrossAmount"):0.00},{reader.GetDecimal("TaxAmount"):0.00},{reader.GetDateTime("SalesDate"):yyyy-MM-dd}\n";
+                string reportRow = $"{reader["CompanyId"]};{reader["Description"]};{reader.GetDecimal("GrossAmount"):0.00};{reader.GetDecimal("TaxAmount"):0.00};{reader.GetDateTime("SalesDate"):yyyy-MM-dd}\n";
 
                 Memory<byte> memory = writer.GetMemory(_minimumBufferSize);
 
