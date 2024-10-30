@@ -2,6 +2,7 @@
 using Demo.Console.Dtos.Inputs;
 using Demo.Console.Factories;
 using Npgsql;
+using Serilog;
 using System.Buffers;
 using System.Data;
 using System.IO.Pipelines;
@@ -75,7 +76,7 @@ public class SalesPipeReportGenerator(string connectionString) : ISalesReportGen
         } 
         catch (Exception ex) 
         {
-            System.Console.WriteLine(ex.Message);    
+            Log.Error(ex.Message);    
         }
         finally
         {
@@ -109,7 +110,7 @@ public class SalesPipeReportGenerator(string connectionString) : ISalesReportGen
         }
         catch (Exception ex)
         {
-            System.Console.WriteLine(ex.Message);
+            Log.Error(ex.Message);
         }
         finally
         {
