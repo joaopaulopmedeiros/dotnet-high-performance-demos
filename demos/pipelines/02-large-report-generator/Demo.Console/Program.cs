@@ -4,11 +4,14 @@ using System.Diagnostics;
 
 SalesReportInputDto input = new(Guid.NewGuid().ToString(), DateTime.Now.AddDays(-5), DateTime.Now);
 
+string connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ??
+    throw new InvalidOperationException("Database connection has not been found");
+
 Stopwatch stopwatch = new();
 
 stopwatch.Start();
 
-string outputFilePath = await new SalesPipeReportGenerator().GenerateAsync(input);
+string outputFilePath = await new SalesPipeReportGenerator(connectionString).GenerateAsync(input);
 
 stopwatch.Stop();
 
