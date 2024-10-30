@@ -6,7 +6,7 @@ using System.Data;
 using System.IO.Pipelines;
 using System.Text;
 
-namespace Demo.Console.Generators.Pipeline;
+namespace Demo.Console.Generators.Pipeline.Stages;
 
 
 public class SalesSearchPipeStage(string connectionString)

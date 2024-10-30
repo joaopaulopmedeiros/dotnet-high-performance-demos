@@ -3,7 +3,7 @@ using System.Buffers;
 using System.IO.Pipelines;
 using System.Text;
 
-namespace Demo.Console.Generators.Pipeline;
+namespace Demo.Console.Generators.Pipeline.Stages;
 
 public class SalesCsvGenerationPipeStage
 {
