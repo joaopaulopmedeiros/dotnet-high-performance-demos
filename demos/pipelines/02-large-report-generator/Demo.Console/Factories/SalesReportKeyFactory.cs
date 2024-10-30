@@ -1,4 +1,4 @@
-﻿namespace Demo.Console.Generators;
+﻿namespace Demo.Console.Factories;
 
 public static class SalesReportKeyFactory
 {

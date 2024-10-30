@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Demo.Console.Dtos.Inputs;
+using Demo.Console.Factories;
 using Npgsql;
 using System.Buffers;
 using System.Data;
@@ -88,10 +89,8 @@ public class SalesPipeReportGenerator(string connectionString) : ISalesReportGen
         {
             using Stream outputStream = File.OpenWrite(outputFilePath);
 
-            //write header
             await outputStream.WriteAsync(Encoding.UTF8.GetBytes("CompanyId;Description;GrossAmount;TaxAmount;SalesDate\n"));
 
-            //write body
             while (true)
             {
                 ReadResult result = await reader.ReadAsync();
