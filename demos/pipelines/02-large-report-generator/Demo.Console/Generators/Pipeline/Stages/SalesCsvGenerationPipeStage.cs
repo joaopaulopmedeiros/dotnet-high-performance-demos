@@ -11,7 +11,7 @@ public class SalesCsvGenerationPipeStage
     {
         try
         {
-            using Stream outputStream = File.OpenWrite(outputFilePath);
+            using Stream outputStream = new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
 
             await outputStream.WriteAsync(Encoding.UTF8.GetBytes("CompanyId;Description;GrossAmount;TaxAmount;SalesDate\n"));
 

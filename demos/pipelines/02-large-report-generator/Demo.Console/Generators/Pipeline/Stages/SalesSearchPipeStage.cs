@@ -8,10 +8,10 @@ using System.Text;
 
 namespace Demo.Console.Generators.Pipeline.Stages;
 
-
 public class SalesSearchPipeStage(string connectionString)
 {
     private readonly string _connectionString = connectionString;
+    private const int BatchSize = 20_000;
 
     public async Task ExecuteAsync(SalesReportInputDto input, PipeWriter writer)
     {
@@ -40,19 +40,37 @@ public class SalesSearchPipeStage(string connectionString)
 
             using var reader = await connection.ExecuteReaderAsync(query, parameters);
 
+            StringBuilder sb = new(BatchSize);
+
             while (await reader.ReadAsync())
             {
-                string reportRow = $"{reader["CompanyId"]};{reader["Description"]};{reader.GetDecimal("GrossAmount"):0.00};{reader.GetDecimal("TaxAmount"):0.00};{reader.GetDateTime("SalesDate"):yyyy-MM-dd}\n";
+                sb.AppendLine($"{reader["CompanyId"]};{reader["Description"]};{reader.GetDecimal("GrossAmount"):0.00};{reader.GetDecimal("TaxAmount"):0.00};{reader.GetDateTime("SalesDate"):yyyy-MM-dd}");
 
-                Memory<byte> memory = writer.GetMemory(reportRow.Length);
+                if (sb.Length >= BatchSize)
+                {
+                    Memory<byte> memory = writer.GetMemory(sb.Length);
 
-                int bytesWritten = Encoding.UTF8.GetBytes(reportRow, memory.Span);
+                    int bytesWritten = Encoding.UTF8.GetBytes(sb.ToString(), memory.Span);
+
+                    writer.Advance(bytesWritten);
+
+                    sb.Clear();
+
+                    FlushResult flushResult = await writer.FlushAsync();
+
+                    if (flushResult.IsCompleted) break; 
+                }
+            }
+
+            if (sb.Length > 0)
+            {
+                Memory<byte> memory = writer.GetMemory(sb.Length);
+
+                int bytesWritten = Encoding.UTF8.GetBytes(sb.ToString(), memory.Span);
 
                 writer.Advance(bytesWritten);
 
-                FlushResult flushResult = await writer.FlushAsync();
-
-                if (flushResult.IsCompleted) break;
+                await writer.FlushAsync();
             }
         }
         catch (Exception ex)
