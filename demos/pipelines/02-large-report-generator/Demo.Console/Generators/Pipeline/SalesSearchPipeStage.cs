@@ -1,38 +1,20 @@
 ﻿using Dapper;
 using Demo.Console.Dtos.Inputs;
-using Demo.Console.Factories;
 using Npgsql;
 using Serilog;
-using System.Buffers;
 using System.Data;
 using System.IO.Pipelines;
 using System.Text;
 
-namespace Demo.Console.Generators;
+namespace Demo.Console.Generators.Pipeline;
 
-public class SalesPipeReportGenerator(string connectionString) : ISalesReportGenerator
+
+public class SalesSearchPipeStage(string connectionString)
 {
     private readonly string _connectionString = connectionString;
     private readonly int _minimumBufferSize = 1024;
 
-    public async Task<string> GenerateAsync(SalesReportInputDto input)
-    {
-        string outputFilePath = SalesReportKeyFactory.Create(
-            input.CompanyId,
-            input.StartDate,
-            input.EndDate);
-
-        Pipe pipe = new();
-
-        Task searchRecords = FillPipeWithSearchRecordsAsync(input, pipe.Writer);
-        Task generateReport = ReadPipeToGenerateReportAsync(outputFilePath, pipe.Reader);
-
-        await Task.WhenAll(searchRecords, generateReport);
-
-        return outputFilePath;
-    }
-
-    private async Task FillPipeWithSearchRecordsAsync(SalesReportInputDto input, PipeWriter writer)
+    public async Task ExecuteAsync(SalesReportInputDto input, PipeWriter writer)
     {
         try
         {
@@ -73,40 +55,6 @@ public class SalesPipeReportGenerator(string connectionString) : ISalesReportGen
 
                 if (flushResult.IsCompleted) break;
             }
-        } 
-        catch (Exception ex) 
-        {
-            Log.Error(ex.Message);    
-        }
-        finally
-        {
-            await writer.CompleteAsync();
-        }
-    }
-
-    private static async Task ReadPipeToGenerateReportAsync(string outputFilePath, PipeReader reader)
-    {
-        try
-        {
-            using Stream outputStream = File.OpenWrite(outputFilePath);
-
-            await outputStream.WriteAsync(Encoding.UTF8.GetBytes("CompanyId;Description;GrossAmount;TaxAmount;SalesDate\n"));
-
-            while (true)
-            {
-                ReadResult result = await reader.ReadAsync();
-
-                ReadOnlySequence<byte> buffer = result.Buffer;
-
-                foreach (ReadOnlyMemory<byte> segment in buffer)
-                {
-                    await outputStream.WriteAsync(segment);
-                }
-
-                reader.AdvanceTo(buffer.End);
-
-                if (result.IsCompleted) break;
-            }
         }
         catch (Exception ex)
         {
@@ -114,7 +62,7 @@ public class SalesPipeReportGenerator(string connectionString) : ISalesReportGen
         }
         finally
         {
-            await reader.CompleteAsync();
+            await writer.CompleteAsync();
         }
     }
 }

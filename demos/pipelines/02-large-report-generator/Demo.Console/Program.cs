@@ -1,5 +1,5 @@
 ﻿using Demo.Console.Dtos.Inputs;
-using Demo.Console.Generators;
+using Demo.Console.Generators.Pipeline;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using System.Diagnostics;
@@ -12,7 +12,7 @@ IConfigurationBuilder builder = new ConfigurationBuilder()
 
 IConfigurationRoot configuration = builder.Build();
 
-string connectionString = configuration["ConnectionStrings:SalesDB"] ?? 
+string connectionString = configuration["ConnectionStrings:SalesDB"] ??
     throw new InvalidOperationException("Connection string has not been found");
 
 Log.Logger = new LoggerConfiguration()
@@ -25,7 +25,10 @@ stopwatch.Start();
 
 Log.Information($"Report generation started. Working on it...");
 
-string outputFilePath = await new SalesPipeReportGenerator(connectionString).GenerateAsync(input);
+SalesSearchPipeStage searchStage = new(connectionString);
+SalesCsvGenerationPipeStage generationStage = new();
+
+string outputFilePath = await new SalesPipeReportGenerator(searchStage, generationStage).GenerateAsync(input);
 
 stopwatch.Stop();
 
