@@ -3,9 +3,9 @@ using System.IO.Pipelines;
 
 namespace Demo.Console.Processors;
 
-public class CsvPipelineProcessor : ICsvProcessor
+public class FileTransfer : IFileTransfer
 {
-    public async Task ProcessAsync(string inputFilePath, string outputFilePath)
+    public async Task TransferAsync(string inputFilePath, string outputFilePath)
     {
         using Stream inputStream = File.OpenRead(inputFilePath);
         using Stream outputStream = File.OpenWrite(outputFilePath);
@@ -20,11 +20,11 @@ public class CsvPipelineProcessor : ICsvProcessor
 
     private static async Task FillPipeAsync(Stream inputStream, PipeWriter writer)
     {
-        const int bufferSize = 1024;
+        const int minimumBufferSize = 1024 * 1024; //1MB
 
         while (true)
         {
-            Memory<byte> memory = writer.GetMemory(bufferSize);
+            Memory<byte> memory = writer.GetMemory(minimumBufferSize);
 
             int bytesRead = await inputStream.ReadAsync(memory);
 
