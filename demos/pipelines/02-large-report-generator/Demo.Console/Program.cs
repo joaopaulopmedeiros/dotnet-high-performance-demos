@@ -1,11 +1,16 @@
 ﻿using Demo.Console.Dtos.Inputs;
 using Demo.Console.Generators;
+using Microsoft.Extensions.Configuration;
 using System.Diagnostics;
 
 SalesReportInputDto input = new(Guid.NewGuid().ToString(), DateTime.Now.AddDays(-5), DateTime.Now);
 
-string connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ??
-    throw new InvalidOperationException("Database connection has not been found");
+var builder = new ConfigurationBuilder().AddJsonFile("appsettings.json");
+
+var configuration = builder.Build();
+
+string connectionString = configuration["ConnectionStrings:SalesDB"] ?? 
+    throw new InvalidOperationException("Connection string has not been found");
 
 Stopwatch stopwatch = new();
 
