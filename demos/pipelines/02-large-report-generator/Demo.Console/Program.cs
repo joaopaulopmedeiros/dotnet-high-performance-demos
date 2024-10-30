@@ -6,11 +6,11 @@ using System.Diagnostics;
 
 SalesReportInputDto input = new(1, DateTime.Now.AddYears(-2), DateTime.Now);
 
-var builder = new ConfigurationBuilder()
+IConfigurationBuilder builder = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json");
 
-var configuration = builder.Build();
+IConfigurationRoot configuration = builder.Build();
 
 string connectionString = configuration["ConnectionStrings:SalesDB"] ?? 
     throw new InvalidOperationException("Connection string has not been found");
