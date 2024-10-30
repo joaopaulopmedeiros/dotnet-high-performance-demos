@@ -2,6 +2,7 @@
 using Demo.Console.Dtos.Inputs;
 using Npgsql;
 using System.Buffers;
+using System.Data;
 using System.IO.Pipelines;
 using System.Text;
 
@@ -10,13 +11,13 @@ namespace Demo.Console.Generators;
 public class SalesPipeReportGenerator(string connectionString) : ISalesReportGenerator
 {
     private readonly string _connectionString = connectionString;
-    private readonly int _minimumBufferSize = 1024 * 1024;
+    private readonly int _minimumBufferSize = 1024;
 
     public async Task<string> GenerateAsync(SalesReportInputDto input)
     {
         string outputFilePath = SalesReportKeyFactory.Create(
-            input.CompanyId, 
-            input.StartDate, 
+            input.CompanyId,
+            input.StartDate,
             input.EndDate);
 
         Pipe pipe = new();
@@ -31,57 +32,85 @@ public class SalesPipeReportGenerator(string connectionString) : ISalesReportGen
 
     private async Task FillPipeWithSearchRecordsAsync(SalesReportInputDto input, PipeWriter writer)
     {
-        await using NpgsqlConnection connection = new(_connectionString);
-
-        string query = "SELECT * FROM sales WHERE company_id = @CompanyId AND created_at >= @StartDate AND created_at <= @EndDate";
-
-        dynamic parameters = new
+        try
         {
-            input.CompanyId,
-            input.StartDate,
-            input.EndDate,
-        };
+            await using NpgsqlConnection connection = new(_connectionString);
 
-        CommandDefinition command = new(query, parameters: parameters, commandTimeout: 60);
+            string query = @"SELECT company_id AS CompanyId, 
+                                description AS Description, 
+                                gross_amount AS GrossAmount, 
+                                tax_amount AS TaxAmount, 
+                                sales_date AS SalesDate 
+                         FROM sales 
+                         WHERE company_id = @CompanyId 
+                           AND sales_date >= @StartDate 
+                           AND sales_date <= @EndDate";
 
-        await foreach (var record in connection.QueryUnbufferedAsync(query))
+            var parameters = new
+            {
+                input.CompanyId,
+                input.StartDate,
+                input.EndDate,
+            };
+
+            await connection.OpenAsync();
+
+            using var reader = await connection.ExecuteReaderAsync(query, parameters);
+
+            while (await reader.ReadAsync())
+            {
+                string reportRow = $"{reader["CompanyId"]},{reader["Description"]},{reader.GetDecimal("GrossAmount"):0.00},{reader.GetDecimal("TaxAmount"):0.00},{reader.GetDateTime("SalesDate"):yyyy-MM-dd}\n";
+
+                Memory<byte> memory = writer.GetMemory(_minimumBufferSize);
+
+                int bytesWritten = Encoding.UTF8.GetBytes(reportRow, memory.Span);
+
+                writer.Advance(bytesWritten);
+
+                FlushResult flushResult = await writer.FlushAsync();
+
+                if (flushResult.IsCompleted) break;
+            }
+        } 
+        catch (Exception ex) 
         {
-            string reportRow = $"{record.CompanyId},{record.Description},{record.GrossAmount:0.00},{record.TaxAmount:0.00},{record.SalesDate:yyyy-MM-dd}\n";
-
-            Memory<byte> memory = writer.GetMemory(_minimumBufferSize);
-
-            int bytesWritten = Encoding.UTF8.GetBytes(reportRow, memory.Span);
-
-            writer.Advance(bytesWritten);
-
-            FlushResult flushResult = await writer.FlushAsync();
-
-            if (flushResult.IsCompleted) break;
+            System.Console.WriteLine(ex.Message);    
         }
-
-        await writer.CompleteAsync();
+        finally
+        {
+            await writer.CompleteAsync();
+        }
     }
 
     private async Task ReadPipeToGenerateReportAsync(string outputFilePath, PipeReader reader)
     {
-        using Stream outputStream = File.OpenWrite(outputFilePath);
-
-        while (true)
+        try
         {
-            ReadResult result = await reader.ReadAsync();
+            using Stream outputStream = File.OpenWrite(outputFilePath);
 
-            ReadOnlySequence<byte> buffer = result.Buffer;
-
-            foreach(ReadOnlyMemory<byte> segment in buffer)
+            while (true)
             {
-                await outputStream.WriteAsync(segment);
+                ReadResult result = await reader.ReadAsync();
+
+                ReadOnlySequence<byte> buffer = result.Buffer;
+
+                foreach (ReadOnlyMemory<byte> segment in buffer)
+                {
+                    await outputStream.WriteAsync(segment);
+                }
+
+                reader.AdvanceTo(buffer.End);
+
+                if (result.IsCompleted) break;
             }
-
-            reader.AdvanceTo(buffer.End);
-
-            if (result.IsCompleted) break;
         }
-
-        await reader.CompleteAsync();
+        catch (Exception ex)
+        {
+            System.Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            await reader.CompleteAsync();
+        }
     }
 }

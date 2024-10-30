@@ -3,9 +3,11 @@ using Demo.Console.Generators;
 using Microsoft.Extensions.Configuration;
 using System.Diagnostics;
 
-SalesReportInputDto input = new(Guid.NewGuid().ToString(), DateTime.Now.AddDays(-5), DateTime.Now);
+SalesReportInputDto input = new(1, DateTime.Now.AddDays(-365), DateTime.Now);
 
-var builder = new ConfigurationBuilder().AddJsonFile("appsettings.json");
+var builder = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json");
 
 var configuration = builder.Build();
 

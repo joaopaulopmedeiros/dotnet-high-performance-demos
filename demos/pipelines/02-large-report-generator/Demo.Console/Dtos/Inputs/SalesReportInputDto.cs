@@ -1,3 +1,3 @@
 ﻿namespace Demo.Console.Dtos.Inputs;
 
-public record SalesReportInputDto(string CompanyId, DateTime StartDate, DateTime EndDate);
+public record SalesReportInputDto(int CompanyId, DateTime StartDate, DateTime EndDate);
