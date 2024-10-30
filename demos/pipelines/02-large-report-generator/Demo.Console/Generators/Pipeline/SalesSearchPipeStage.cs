@@ -12,7 +12,6 @@ namespace Demo.Console.Generators.Pipeline;
 public class SalesSearchPipeStage(string connectionString)
 {
     private readonly string _connectionString = connectionString;
-    private readonly int _minimumBufferSize = 1024;
 
     public async Task ExecuteAsync(SalesReportInputDto input, PipeWriter writer)
     {
@@ -45,7 +44,7 @@ public class SalesSearchPipeStage(string connectionString)
             {
                 string reportRow = $"{reader["CompanyId"]};{reader["Description"]};{reader.GetDecimal("GrossAmount"):0.00};{reader.GetDecimal("TaxAmount"):0.00};{reader.GetDateTime("SalesDate"):yyyy-MM-dd}\n";
 
-                Memory<byte> memory = writer.GetMemory(_minimumBufferSize);
+                Memory<byte> memory = writer.GetMemory(reportRow.Length);
 
                 int bytesWritten = Encoding.UTF8.GetBytes(reportRow, memory.Span);
 
