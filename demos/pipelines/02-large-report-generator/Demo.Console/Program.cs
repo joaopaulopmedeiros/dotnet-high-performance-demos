@@ -18,6 +18,8 @@ Stopwatch stopwatch = new();
 
 stopwatch.Start();
 
+Console.WriteLine($"Start generation");
+
 string outputFilePath = await new SalesPipeReportGenerator(connectionString).GenerateAsync(input);
 
 stopwatch.Stop();
