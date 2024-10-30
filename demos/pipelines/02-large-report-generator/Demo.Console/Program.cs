@@ -3,7 +3,7 @@ using Demo.Console.Generators;
 using Microsoft.Extensions.Configuration;
 using System.Diagnostics;
 
-SalesReportInputDto input = new(1, DateTime.Now.AddDays(-365), DateTime.Now);
+SalesReportInputDto input = new(1, DateTime.Now.AddYears(-2), DateTime.Now);
 
 var builder = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
