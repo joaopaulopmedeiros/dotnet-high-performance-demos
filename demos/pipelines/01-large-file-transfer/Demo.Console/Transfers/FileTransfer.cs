@@ -10,10 +10,10 @@ public class FileTransfer : IFileTransfer
         using Stream inputStream = File.OpenRead(inputFilePath);
         using Stream outputStream = File.OpenWrite(outputFilePath);
 
-        var pipe = new Pipe();
+        Pipe pipe = new ();
 
-        var fillPipeTask = FillPipeAsync(inputStream, pipe.Writer);
-        var readPipeTask = ReadPipeAsync(outputStream, pipe.Reader);
+        Task fillPipeTask = FillPipeAsync(inputStream, pipe.Writer);
+        Task readPipeTask = ReadPipeAsync(outputStream, pipe.Reader);
 
         await Task.WhenAll(fillPipeTask, readPipeTask);
     }
