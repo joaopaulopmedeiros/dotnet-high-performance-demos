@@ -16,4 +16,4 @@ SELECT
     (RANDOM() * 100)::NUMERIC(10, 2),
     CURRENT_DATE - (RANDOM() * 365)::INT
 FROM
-    generate_series(1, 1000000);
+    generate_series(1, 10000000);
